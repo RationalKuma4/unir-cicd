@@ -16,7 +16,7 @@ test-api:
 	docker network create calc-test-api || true
 	docker run -d --network calc-test-api --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
 	docker run --network calc-test-api --name api-tests --env PYTHONPATH=/opt/calc --env BASE_URL=http://apiserver:5000/ -w /opt/calc calculator-app:latest pytest --junit-xml=results/api_result.xml -m api  || true
-	docker cp api-tests:/opt/calc/results ./
+	docker cp api-tests:/opt/calc/results/api_result.xml results/api/api_result.xml || true
 	docker stop apiserver || true
 	docker rm --force apiserver || true
 	docker stop api-tests || true
@@ -37,7 +37,7 @@ test-e2e:
 	docker cp ./test/e2e/cypress.json e2e-tests:/cypress.json
 	docker cp ./test/e2e/cypress e2e-tests:/cypress
 	docker start -a e2e-tests || true
-	docker cp e2e-tests:/results ./  || true
+	docker cp e2e-tests:/cypress/results/ results/e2e/ || true
 	docker rm --force apiserver  || true
 	docker rm --force calc-web || true
 	docker rm --force e2e-tests || true
@@ -49,10 +49,9 @@ run-web:
 stop-web:
 	docker stop calc-web
 
-
 start-sonar-server:
 	docker network create calc-sonar || true
-	docker run -d --rm --stop-timeout 60 --network calc-sonar --name sonarqube-server -p 9000:9000 --volume `pwd`/sonar/data:/opt/sonarqube/data --volume `pwd`/sonar/logs:/opt/sonarqube/logs sonarqube:8.3.1-community
+	docker run -d --rm --stop-timeout 60 --network calc-sonar --name sonarqube-server -p 9000:9000 --volume `pwd`/sonar/data:/opt/sonarqube/data --volume `pwd`/sonarqube/logs:/opt/sonarqube/logs sonarqube:8.3.1-community
 
 stop-sonar-server:
 	docker stop sonarqube-server
@@ -63,7 +62,6 @@ start-sonar-scanner:
 
 pylint:
 	docker run --rm --volume `pwd`:/opt/calc --env PYTHONPATH=/opt/calc -w /opt/calc calculator-app:latest pylint app/ | tee results/pylint_result.txt
-
 
 deploy-stage:
 	docker stop apiserver || true
